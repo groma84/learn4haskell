@@ -1156,10 +1156,10 @@ properties using typeclasses, but they are different data types in the end.
 Implement data types and typeclasses, describing such a battle between two
 contestants, and write a function that decides the outcome of a fight!
 -}
-data KnightAction = KAttack | DrinkPotion | CastSpell
-data MonsterAction = MAttack | RunAway
-data Action = KnightAction KnightAction | MonsterAction MonsterAction
-data Winner a = Winner a
+data KnightAction = KAttack | DrinkPotion | CastSpell deriving (Show, Eq)
+data MonsterAction = MAttack | RunAway deriving (Show, Eq)
+data Action = KnightAction KnightAction | MonsterAction MonsterAction deriving (Show, Eq)
+data Winner a = Winner a deriving (Show, Eq)
 
 
 data Knight = Knight 
@@ -1167,13 +1167,13 @@ data Knight = Knight
   , kAttack :: Int
   , kDefence :: Int
   , kActions :: [Action]
-  }
+  } deriving (Show, Eq)
 
 data Monster = Monster 
   { mHealth :: Int
   , mAttack :: Int
   , mActions :: [Action]
-  }
+  } deriving (Show, Eq) 
 
 class Combatant a where
   getHealth :: a -> Int
@@ -1199,7 +1199,7 @@ instance Combatant Monster where
   getDefence _ = Nothing
   setDefence monster _ = monster
 
-doAttack :: Combatant a => a -> a -> (a, a)
+doAttack :: (Combatant a, Combatant b) => a -> b -> (a, b)
 doAttack actor victim =
   let
     atk = getAttack actor

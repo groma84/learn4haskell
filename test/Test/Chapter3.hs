@@ -139,4 +139,47 @@ chapter3normal = describe "Chapter3Normal" $ do
             it "should return 0 on Friday" $ daysToParty Friday `shouldBe` 0
             it "should return 6 on Saturday" $ daysToParty Saturday `shouldBe` 6
             it "should return 5 on Sunday" $ daysToParty Sunday `shouldBe` 5
+    describe "Task9: Fight" $ do
+        describe "doAttack" $ do
+            it "should reduce the monster's hitpoints if a knight attacks" $ do
+                let attacker = Knight {
+                            kHealth = 3
+                            , kAttack = 3
+                            , kDefence = 0
+                            , kActions = []
+                }
+                let defender = Monster {
+                            mHealth = 2
+                            , mAttack = 2
+                            , mActions = []
+                }
 
+                doAttack attacker defender `shouldBe` (attacker, defender { mHealth = -1 }) 
+            it "TODO: negative attack - what should happen?" $ do
+                let attacker = Knight {
+                            kHealth = 3
+                            , kAttack = 3
+                            , kDefence = 0
+                            , kActions = []
+                }
+                let defender = Monster {
+                            mHealth = 2
+                            , mAttack = 2
+                            , mActions = []
+                }
+
+                doAttack attacker defender `shouldBe` (attacker, defender { mHealth = -123456 }) 
+            it "TODO: negative defence - what should happen?" $ do
+                let attacker = Knight {
+                            kHealth = 3
+                            , kAttack = 3
+                            , kDefence = 0
+                            , kActions = []
+                }
+                let defender = Monster {
+                            mHealth = 2
+                            , mAttack = 2
+                            , mActions = []
+                }
+
+                doAttack attacker defender `shouldBe` (attacker, defender { mHealth = -123456 }) 
