@@ -16,41 +16,41 @@ chapter3normal = describe "Chapter3Normal" $ do
     describe "Task2: Fight" $ do
         describe "fight" $ do
             it "no winner, gold stays the same" $ do
-                let knight = Knight {
+                let knight = Knight' {
                     knightHealth = 4
-                    , knightAttack = 2
+                    , knightAttack = 1
                     , knightGold = 0
                                     }
-                let monster = Monster {
+                let monster = Monster' {
                     monsterHealth = 2
                     , monsterAttack = 1
                     , monsterGold = 7
                 }
-                fight knight monster `shouldBe` 0
+                fight' knight monster `shouldBe` 0
             it "knight wins and gets the gold" $ do
-                let knight = Knight {
+                let knight = Knight' {
                     knightHealth = 4
                     , knightAttack = 42
                     , knightGold = 0
                                     }
-                let monster = Monster {
+                let monster = Monster' {
                     monsterHealth = 2
                     , monsterAttack = 1
                     , monsterGold = 7
                 }
-                fight knight monster `shouldBe` 7
+                fight' knight monster `shouldBe` 7
             it "monster wins" $ do
-                let knight = Knight {
+                let knight = Knight' {
                     knightHealth = 4
                     , knightAttack = 2
                     , knightGold = 0
                                     }
-                let monster = Monster {
+                let monster = Monster' {
                     monsterHealth = 22
                     , monsterAttack = 11
                     , monsterGold = 7
                 }
-                fight knight monster `shouldBe` -1
+                fight' knight monster `shouldBe` -1
     describe "Task4: City" $ do
         describe "buildHouse" $ do
             it "should append new house to list of houses" $ do
@@ -105,15 +105,15 @@ chapter3normal = describe "Chapter3Normal" $ do
                 }
                 buildCastle city NoCastle `shouldBe` city { castle = NoCastle}
     describe "Task7: Append" $ do
-        describe "AGold" $ do
-            it "should return sum of both golds" $ append (AGold 3) (AGold 4) `shouldBe` AGold 7
+        describe "Gold'" $ do
+            it "should return sum of both golds" $ append (Gold' 3) (Gold' 4) `shouldBe` Gold' 7
         describe "Lists" $ do
             it "should return empty list with two empty lists" $ append ([] :: [Int]) [] `shouldBe` []
             it "should return concatenated lists" $ append [1,2] [3,4] `shouldBe` ([1,2,3,4] :: [Int])
         describe "Maybe" $ do
-            it "should return Nothing if first is Nothing" $ append Nothing (Just $ AGold 3)  `shouldBe` (Nothing :: Maybe AGold)
-            it "should return Nothing if second is Nothing" $ append (Just $ AGold 3) Nothing `shouldBe` (Nothing :: Maybe AGold)
-            it "should return append of inner on Just" $ append (Just $ AGold 3) (Just $ AGold 4) `shouldBe` (Just $ AGold 7)
+            it "should return Nothing if first is Nothing" $ append Nothing (Just $ Gold' 3)  `shouldBe` (Nothing :: Maybe Gold')
+            it "should return Nothing if second is Nothing" $ append (Just $ Gold' 3) Nothing `shouldBe` (Nothing :: Maybe Gold')
+            it "should return append of inner on Just" $ append (Just $ Gold' 3) (Just $ Gold' 4) `shouldBe` (Just $ Gold' 7)
     describe "Task8: Days" $ do
         describe "isWeekend" $ do
             it "should return True on Saturday" $ isWeekend Saturday `shouldBe` True

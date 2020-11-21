@@ -68,6 +68,7 @@ Haskell has several different ways to create entirely new data types. Let's talk
 about them all and master our skill of data types construction.
 -}
 
+import qualified Data.Maybe
 {- |
 =🛡= Type aliases
 
@@ -381,26 +382,26 @@ after the fight. The battle has the following possible outcomes:
 type Gold = Integer
 type Health = Integer
 type Attack = Integer
-data Knight = Knight {
+data Knight' = Knight' {
   knightHealth :: Health
   , knightAttack :: Attack
   , knightGold :: Gold
 }
 
 
-data Monster = Monster {
+data Monster' = Monster' {
   monsterHealth :: Health
   , monsterAttack :: Attack
   , monsterGold :: Gold
 }
 
 
-type FightResult = (Bool, Bool)
+data FightResult = KnightWins | MonsterWins | Draw
 
-fight :: Knight -> Monster -> Gold
-fight knight monster = 
+fight' :: Knight' -> Monster' -> Gold
+fight' knight monster = 
   let
-    fightOneRound :: Knight -> Monster -> (Knight, Monster)
+    fightOneRound :: Knight' -> Monster' -> (Knight', Monster')
     fightOneRound fightKnight fightMonster = 
       let
         monsterAfterHit = fightMonster { monsterHealth = monsterHealth fightMonster - knightAttack fightKnight}
@@ -416,15 +417,14 @@ fight knight monster =
 
     evaluateFightResult :: Health -> Health -> FightResult
     evaluateFightResult knHealth mnHealth
-      | knHealth < 0 = (False, True)
-      | mnHealth < 0 = (True, False)
-      | otherwise = (False, False)
+      | knHealth <= 0 = MonsterWins
+      | mnHealth <= 0 = KnightWins
+      | otherwise = Draw
 
     getNewGold :: Gold -> Gold -> FightResult -> Gold
-    getNewGold knGold _ (False, False) =  knGold
-    getNewGold _ _ (False, True) =  -1
-    getNewGold knGold mnGold (True, False) =  knGold + mnGold
-    getNewGold _ _ (True, True) =  -1 -- should never happen
+    getNewGold knGold _ Draw =  knGold
+    getNewGold _ _ MonsterWins =  -1
+    getNewGold knGold mnGold KnightWins =  knGold + mnGold
 
     (knightAfterFight, monsterAfterFight) = fightOneRound knight monster
     fightResult = evaluateFightResult (knightHealth knightAfterFight) (monsterHealth monsterAfterFight)
@@ -545,15 +545,15 @@ After defining the city, implement the following functions:
    and at least 10 living __people__ inside in all houses of the city totally.
 -}
 data Building = Church | Library deriving (Show, Eq)
-data PeopleInHouse = One | Two | Three | Four  deriving (Show, Eq, Bounded, Ord)
+data PeopleInHouse = One | Two | Three | Four deriving (Show, Eq, Enum, Bounded, Ord)
 newtype House = House PeopleInHouse deriving (Show, Eq)
-data Wall = NoWall | AWall  deriving (Show, Eq)
+data Wall = NoWall | AWall deriving (Show, Eq)
 data Castle = NoCastle | HasCastle String Wall deriving (Show, Eq)
 data City = City {
   castle :: Castle
   , building :: Building 
   , houses :: [House]
-}  deriving (Show, Eq)
+} deriving (Show, Eq)
 
 buildCastle :: City -> Castle -> City
 buildCastle city newCastle =
@@ -577,11 +577,7 @@ buildWalls city =
 
     oldCastleName = castleName $ castle city 
 
-    getPeople (House people) = case people of
-       One -> 1
-       Two -> 2
-       Three -> 3
-       Four -> 4
+    getPeople (House people) = 1 + fromEnum people 
     allPeople = map getPeople (houses city)
     peopleInHouses = sum allPeople
 
@@ -1029,16 +1025,16 @@ Implement instances of "Append" for the following types:
 class Append a where
     append :: a -> a -> a
 
-newtype AGold = AGold Integer deriving (Show, Eq)
-instance Append AGold where
-  append :: AGold -> AGold -> AGold
-  append (AGold g1) (AGold g2) = AGold $ g1 + g2
+newtype Gold' = Gold' Integer deriving (Show, Eq)
+instance Append Gold' where
+  append :: Gold' -> Gold' -> Gold'
+  append (Gold' g1) (Gold' g2) = Gold' $ g1 + g2
 
 instance Append [a] where
   append :: [a] -> [a] -> [a]
   append = (++) 
 
-instance (Append a) => Append (Maybe a) where
+instance Append a => Append (Maybe a) where
   append :: Maybe a -> Maybe a -> Maybe a
   append (Just c1) (Just c2) = Just (append c1 c2)
   append _ _ = Nothing
@@ -1160,8 +1156,103 @@ properties using typeclasses, but they are different data types in the end.
 Implement data types and typeclasses, describing such a battle between two
 contestants, and write a function that decides the outcome of a fight!
 -}
+data KnightAction = KAttack | DrinkPotion | CastSpell
+data MonsterAction = MAttack | RunAway
+data Action = KnightAction KnightAction | MonsterAction MonsterAction
+data Winner a = Winner a
 
 
+data Knight = Knight 
+  { kHealth :: Int
+  , kAttack :: Int
+  , kDefence :: Int
+  , kActions :: [Action]
+  }
+
+data Monster = Monster 
+  { mHealth :: Int
+  , mAttack :: Int
+  , mActions :: [Action]
+  }
+
+class Combatant a where
+  getHealth :: a -> Int
+  getAttack :: a -> Int
+  getActions :: a -> [Action]
+  getDefence :: a -> Maybe Int
+  setHealth :: a -> Int -> a
+  setDefence :: a -> Int -> a
+
+instance Combatant Knight where
+  getHealth = kHealth
+  getAttack = kAttack
+  getActions = kActions
+  getDefence knight = Just $ kDefence knight
+  setHealth knight health = knight { kHealth = health }
+  setDefence knight defence = knight { kDefence = defence }
+
+instance Combatant Monster where
+  getHealth = mHealth
+  setHealth monster health = monster { mHealth = health }
+  getAttack = mAttack
+  getActions = mActions
+  getDefence _ = Nothing
+  setDefence monster _ = monster
+
+doAttack :: Combatant a => a -> a -> (a, a)
+doAttack actor victim =
+  let
+    atk = getAttack actor
+    def = getDefence victim
+    hp = getHealth victim
+    defForCalc = Data.Maybe.fromMaybe 0 def
+    newHpVictim = hp - (atk - defForCalc)
+  in
+    (actor, setHealth victim newHpVictim)
+
+applyAction :: Combatant a => Action -> a -> a -> (a, a)
+applyAction action actor victim =
+  case action of
+    KnightAction ka -> 
+      case ka of
+        KAttack -> 
+          doAttack actor victim
+            
+        DrinkPotion -> 
+          (setHealth actor $ (+) 1 $ getHealth actor, victim)
+          
+        CastSpell -> 
+          case  getDefence actor of
+            Nothing -> 
+              (setDefence actor 1, victim)
+            Just def ->
+              (setDefence actor $ (+) 1 def, victim)
+
+    MonsterAction ma ->
+      case ma of
+        MAttack -> 
+            doAttack actor victim
+        RunAway -> 
+          (actor, victim)
+
+fightOneRound :: Combatant a => Int -> a -> a -> (a, a)
+fightOneRound roundCount first second = 
+  let
+    getNextAction :: Combatant a => a -> Action
+    getNextAction  = head . drop roundCount . cycle . getActions
+
+    action1 = getNextAction first
+    action2 = getNextAction second
+
+    (firstAfterAction1, secondAfterAction1) = applyAction action1 first second
+    -- TODO: Check if someone has won already
+    (firstAfterAction2, secondAfterAction2) = applyAction action2 firstAfterAction1 secondAfterAction1
+    -- TODO: Check if someone has won
+  in
+    error "todo"
+
+fight :: Combatant a => a -> b -> Winner a
+fight first second = error "todo"
 
 {-
 You did it! Now it is time to open pull request with your changes
