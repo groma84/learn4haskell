@@ -396,7 +396,7 @@ data Monster' = Monster' {
 }
 
 
-data FightResult = KnightWins | MonsterWins | Draw
+data FightResult = KnightWins | MonsterWins | Draw'
 
 fight' :: Knight' -> Monster' -> Gold
 fight' knight monster = 
@@ -419,10 +419,10 @@ fight' knight monster =
     evaluateFightResult knHealth mnHealth
       | knHealth <= 0 = MonsterWins
       | mnHealth <= 0 = KnightWins
-      | otherwise = Draw
+      | otherwise = Draw'
 
     getNewGold :: Gold -> Gold -> FightResult -> Gold
-    getNewGold knGold _ Draw =  knGold
+    getNewGold knGold _ Draw' =  knGold
     getNewGold _ _ MonsterWins =  -1
     getNewGold knGold mnGold KnightWins =  knGold + mnGold
 
@@ -1159,8 +1159,7 @@ contestants, and write a function that decides the outcome of a fight!
 data KnightAction = KAttack | DrinkPotion | CastSpell deriving (Show, Eq)
 data MonsterAction = MAttack | RunAway deriving (Show, Eq)
 data Action = KnightAction KnightAction | MonsterAction MonsterAction deriving (Show, Eq)
-data Winner a = Winner a deriving (Show, Eq)
-
+data Winner a b = NoOne | First a | Second b | Draw
 
 data Knight = Knight 
   { kHealth :: Int
@@ -1210,7 +1209,7 @@ doAttack actor victim =
   in
     (actor, setHealth victim newHpVictim)
 
-applyAction :: Combatant a => Action -> a -> a -> (a, a)
+applyAction :: (Combatant a, Combatant b) => Action -> a -> b -> (a, b)
 applyAction action actor victim =
   case action of
     KnightAction ka -> 
@@ -1235,7 +1234,22 @@ applyAction action actor victim =
         RunAway -> 
           (actor, victim)
 
-fightOneRound :: Combatant a => Int -> a -> a -> (a, a)
+
+determineWinner :: (Combatant a, Combatant b) => (a, b) -> Winner a b
+determineWinner (first, second) =
+  let
+    firstHealth = getHealth first
+    secondHealth = getHealth second
+    dead = (<= 0) 
+  in
+    case (dead firstHealth, dead secondHealth) of
+      (False, False) -> NoOne
+      (True, True) -> Draw
+      (True, False) -> First first
+      (False, True) -> Second second
+
+
+fightOneRound :: (Combatant a, Combatant b) => Int -> a -> b -> Winner a b
 fightOneRound roundCount first second = 
   let
     getNextAction :: Combatant a => a -> Action
@@ -1245,14 +1259,23 @@ fightOneRound roundCount first second =
     action2 = getNextAction second
 
     (firstAfterAction1, secondAfterAction1) = applyAction action1 first second
-    -- TODO: Check if someone has won already
-    (firstAfterAction2, secondAfterAction2) = applyAction action2 firstAfterAction1 secondAfterAction1
-    -- TODO: Check if someone has won
-  in
-    error "todo"
 
-fight :: Combatant a => a -> b -> Winner a
-fight first second = error "todo"
+    winnerAfterFirstAction = determineWinner (firstAfterAction1, secondAfterAction1)
+    result = case winnerAfterFirstAction of
+      NoOne ->
+        let
+          (firstAfterAction2, secondAfterAction2) = applyAction action2 firstAfterAction1 secondAfterAction1
+          winnerAfterSecondAction = determineWinner (firstAfterAction2, secondAfterAction2)
+        in
+          case winnerAfterSecondAction of
+            NoOne -> fightOneRound (roundCount + 1) firstAfterAction2 secondAfterAction2
+            _ -> winnerAfterSecondAction
+      _ -> winnerAfterFirstAction
+  in
+    result
+
+fight :: (Combatant a, Combatant b) => a -> b -> Winner a b
+fight first second = fightOneRound 0 first second
 
 {-
 You did it! Now it is time to open pull request with your changes
