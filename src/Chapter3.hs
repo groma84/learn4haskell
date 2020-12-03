@@ -1,3 +1,4 @@
+
 {- 👋 Welcome to Chapter Three of our journey, Courageous Knight!
 
 Glad to see you back for more challenges. You fight great for the glory of the
@@ -52,6 +53,7 @@ provide more top-level type signatures, especially when learning Haskell.
 {-# LANGUAGE InstanceSigs #-}
 
 module Chapter3 where
+{-# ANN module "HLint: ignore Eta reduce" #-}
 
 {-
 =🛡= Types in Haskell
@@ -69,6 +71,7 @@ about them all and master our skill of data types construction.
 -}
 
 import qualified Data.Maybe
+import qualified Debug.Trace
 {- |
 =🛡= Type aliases
 
@@ -1159,7 +1162,7 @@ contestants, and write a function that decides the outcome of a fight!
 data KnightAction = KAttack | DrinkPotion | CastSpell deriving (Show, Eq)
 data MonsterAction = MAttack | RunAway deriving (Show, Eq)
 data Action = KnightAction KnightAction | MonsterAction MonsterAction deriving (Show, Eq)
-data Winner a b = NoOne | First a | Second b | Draw
+data Winner a b = NoOne | First a | Second b | Draw deriving (Show, Eq)
 
 data Knight = Knight 
   { kHealth :: Int
@@ -1221,7 +1224,7 @@ applyAction action actor victim =
           (setHealth actor $ (+) 1 $ getHealth actor, victim)
           
         CastSpell -> 
-          case  getDefence actor of
+          case getDefence actor of
             Nothing -> 
               (setDefence actor 1, victim)
             Just def ->
@@ -1240,23 +1243,22 @@ determineWinner (first, second) =
   let
     firstHealth = getHealth first
     secondHealth = getHealth second
-    dead = (<= 0) 
+    dead health = (health <= 0) 
   in
     case (dead firstHealth, dead secondHealth) of
       (False, False) -> NoOne
       (True, True) -> Draw
-      (True, False) -> First first
-      (False, True) -> Second second
+      (True, False) -> Second second
+      (False, True) -> First first
 
+getNextAction :: Combatant a => Int -> a -> Action
+getNextAction roundCount = head . drop roundCount . cycle . getActions
 
-fightOneRound :: (Combatant a, Combatant b) => Int -> a -> b -> Winner a b
-fightOneRound roundCount first second = 
+fightToTheDeath :: (Combatant a, Combatant b) => Int -> a -> b -> Winner a b
+fightToTheDeath roundCount first second = 
   let
-    getNextAction :: Combatant a => a -> Action
-    getNextAction  = head . drop roundCount . cycle . getActions
-
-    action1 = getNextAction first
-    action2 = getNextAction second
+    action1 = getNextAction roundCount first
+    action2 = getNextAction roundCount second
 
     (firstAfterAction1, secondAfterAction1) = applyAction action1 first second
 
@@ -1264,18 +1266,18 @@ fightOneRound roundCount first second =
     result = case winnerAfterFirstAction of
       NoOne ->
         let
-          (firstAfterAction2, secondAfterAction2) = applyAction action2 firstAfterAction1 secondAfterAction1
+          (secondAfterAction2, firstAfterAction2) = applyAction action2 secondAfterAction1 firstAfterAction1
           winnerAfterSecondAction = determineWinner (firstAfterAction2, secondAfterAction2)
         in
           case winnerAfterSecondAction of
-            NoOne -> fightOneRound (roundCount + 1) firstAfterAction2 secondAfterAction2
+            NoOne -> fightToTheDeath (roundCount + 1) firstAfterAction2 secondAfterAction2
             _ -> winnerAfterSecondAction
       _ -> winnerAfterFirstAction
   in
     result
 
 fight :: (Combatant a, Combatant b) => a -> b -> Winner a b
-fight first second = fightOneRound 0 first second
+fight first second = fightToTheDeath 0 first second
 
 {-
 You did it! Now it is time to open pull request with your changes
