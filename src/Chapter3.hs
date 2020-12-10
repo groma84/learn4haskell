@@ -53,8 +53,6 @@ provide more top-level type signatures, especially when learning Haskell.
 {-# LANGUAGE InstanceSigs #-}
 
 module Chapter3 where
-{-# ANN module "HLint: ignore Eta reduce" #-}
-
 {-
 =🛡= Types in Haskell
 
@@ -71,7 +69,6 @@ about them all and master our skill of data types construction.
 -}
 
 import qualified Data.Maybe
-import qualified Debug.Trace
 {- |
 =🛡= Type aliases
 
