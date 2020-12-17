@@ -476,13 +476,34 @@ Applicatives can be found in many applications:
 =⚔️= Task 4
 
 Implement the Applicative instance for our 'Secret' data type from before.
+
+
+data Secret e a
+    = Trap e
+    | Reward a
+    deriving (Show, Eq)
+
+
+class Functor f => Applicative f where
+    pure :: a -> f a
+    (<*>) :: f (a -> b) -> f a -> f b
+
+instance Applicative Maybe where
+    pure :: a -> Maybe a
+    pure = Just
+
+    (<*>) :: Just (a -> b) -> Just a -> Just b
+    Nothing <*> _ = Nothing
+    Just f <*> x = fmap f x
+
 -}
 instance Applicative (Secret e) where
     pure :: a -> Secret e a
-    pure = error "pure Secret: Not implemented!"
+    pure = Reward
 
     (<*>) :: Secret e (a -> b) -> Secret e a -> Secret e b
-    (<*>) = error "(<*>) Secret: Not implemented!"
+    (Trap e) <*> _   = Trap e 
+    (Reward f) <*> x = fmap f x
 
 {- |
 =⚔️= Task 5
@@ -494,8 +515,32 @@ Implement the 'Applicative' instance for our 'List' type.
   apply each function to each argument and combine all the results. You
   may also need to implement a few useful helper functions for our List
   type.
--}
 
+data List a
+    = Empty
+    | Cons a (List a)
+    deriving (Show)
+
+instance Applicative Maybe where
+    pure :: a -> Maybe a
+    pure = Just
+
+    (<*>) :: Just (a -> b) -> Just a -> Just b
+    Nothing <*> _ = Nothing
+    Just f <*> x = fmap f x
+-}
+append :: List a -> List a -> List a
+append l1 Empty = l1
+append Empty l2 = l2
+append (Cons x xs) l2 = Cons x (append xs l2)
+
+instance Applicative (List) where
+  pure :: a -> List a
+  pure x = Cons x Empty
+
+  (<*>) :: List (a -> b) -> List a -> List b
+  Empty <*> _ = Empty
+  (Cons f fs) <*> values = append (fmap f values) (fs <*> values)
 
 {- |
 =🛡= Monad
