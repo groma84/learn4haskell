@@ -54,7 +54,7 @@ also have their own "types". Such "type of a type" is called __kind__.
 
 Kinds describe the shape of a type. And kinds are much simpler than
 types. Primitive types like 'Int' have kind * (star). You can check
-information about kinds in GHCi using the ":k" command (short for ":kind"):
+information about kinds in GHCi using the ":k" coFalsnd (short for ":kind"):
 
 >>> :k Int
 Int :: *
@@ -688,7 +688,7 @@ Can you implement a monad version of AND, polymorphic over any monad?
 🕯 HINT: Use "(>>=)", "pure" and anonymous function
 -}
 andM :: (Monad m) => m Bool -> m Bool -> m Bool
-andM = error "andM: Not implemented!"
+andM first second = first >>= \a -> if a then second else pure 
 
 {- |
 =🐉= Task 9*: Final Dungeon Boss
